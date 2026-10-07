@@ -1,19 +1,17 @@
-"""Custom exceptions and standard error codes for ParseAnything."""
+"""Custom exceptions and error codes for ParseAnything engine."""
 
-class ErrorCode:
-    """Standardized error codes required by DQCL specification."""
+from enum import Enum
+
+
+class ErrorCode(str, Enum):
     FILE_NOT_FOUND = "FILE_NOT_FOUND"
     UNSUPPORTED_FORMAT = "UNSUPPORTED_FORMAT"
-    CORRUPT_FILE = "CORRUPT_FILE"
-    FILE_TOO_LARGE = "FILE_TOO_LARGE"
-    TIMEOUT_EXCEEDED = "TIMEOUT_EXCEEDED"
-    PARSING_FAILED = "PARSING_FAILED"
+    PARSING_ERROR = "PARSING_ERROR"
 
 
 class ParseError(Exception):
-    """Base exception class for all ParseAnything failures."""
-    def __init__(self, code: str, message: str, details: dict = None):
+    """Custom exception raised when document parsing or format detection fails."""
+    def __init__(self, message: str, code: ErrorCode = ErrorCode.PARSING_ERROR):
         super().__init__(message)
-        self.code = code
         self.message = message
-        self.details = details or {}
+        self.code = code

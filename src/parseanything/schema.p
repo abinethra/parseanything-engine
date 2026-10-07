@@ -5,14 +5,14 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 
-from parseanything.exceptions import ParseError
+class ParseError(Exception):
+    """Custom exception raised when document parsing or format detection fails."""
+    pass
 
 
 class ErrorResponse(BaseModel):
     """Standard error response model."""
-    status: str = "error"
-    code: str
-    message: str
+    error: str
     detail: Optional[str] = None
 
 
@@ -23,9 +23,6 @@ class BlockType(str, Enum):
     TABLE = "table"
     HEADER = "header"
     FOOTER = "footer"
-    HEADER_FOOTER = "header_footer"
-    FIGURE = "figure"
-    EQUATION = "equation"
 
 
 class BBox(BaseModel):
@@ -41,7 +38,6 @@ class Block(BaseModel):
     text: str
     block_type: BlockType = BlockType.PARAGRAPH
     bbox: BBox = Field(default_factory=lambda: BBox(x0=0.0, y0=0.0, x1=0.0, y1=0.0))
-    confidence: float = 1.0
     flags: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 

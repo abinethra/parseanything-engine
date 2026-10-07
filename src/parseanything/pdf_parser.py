@@ -1,69 +1,85 @@
-"""Digital PDF extractor using PyMuPDF (fitz)."""
+"""PDF parsing module using PyMuPDF (fitz)."""
 
 import fitz  # PyMuPDF
 from typing import List
 from parseanything.schema import Page, Block, BlockType, BBox
-from parseanything.exceptions import ParseError, ErrorCode
 
 
 def extract_digital_pdf(file_path: str) -> List[Page]:
-    """Extracts structured text blocks and bounding boxes from a native digital PDF."""
-    try:
-        doc = fitz.open(file_path)
-    except Exception as e:
-        raise ParseError(
-            code=ErrorCode.CORRUPT_FILE,
-            message=f"Failed to open PDF file: {str(e)}"
-        )
-
+    """Extracts pages and text blocks with bounding boxes and metadata from a PDF file."""
+    doc = fitz.open(file_path)
     pages: List[Page] = []
 
     for page_idx, page in enumerate(doc):
         page_num = page_idx + 1
-        page_rect = page.rect
-        width = float(page_rect.width)
-        height = float(page_rect.height)
+        width = page.rect.width
+        height = page.rect.height
 
-        # Extract structured text blocks: (x0, y0, x1, y1, "text", block_no, block_type)
-        text_blocks = page.get_text("blocks")
-        parsed_blocks: List[Block] = []
+        page_dict = page.get_text("dict")
+        blocks: List[Block] = []
 
-        for b_idx, b in enumerate(text_blocks):
-            x0, y0, x1, y1, text_content, block_no, b_type = b
-            text = text_content.strip()
+        block_counter = 1
+        for b in page_dict.get("blocks", []):
+            if b.get("type") == 0:
+                lines = b.get("lines", [])
+                full_text_lines = []
+                font_sizes = []
+                is_bold_flags = []
 
-            if not text:
-                continue
+                for line in lines:
+                    line_text = ""
+                    for span in line.get("spans", []):
+                        span_text = span.get("text", "")
+                        line_text += span_text
+                        font_sizes.append(span.get("size", 10.0))
 
-            bbox = BBox(
-                x0=round(float(x0), 2),
-                y0=round(float(y0), 2),
-                x1=round(float(x1), 2),
-                y1=round(float(y1), 2)
-            )
+                        flags = span.get("flags", 0)
+                        font_name = str(span.get("font", "")).lower()
+                        if (flags & 16) or ("bold" in font_name) or ("black" in font_name):
+                            is_bold_flags.append(True)
 
-            block = Block(
-                block_id=f"p{page_num}_b{b_idx + 1}",
-                block_type=BlockType.PARAGRAPH,
-                text=text,
-                page_number=page_num,
-                bbox=bbox,
-                confidence=1.0,
-                flags=[]
-            )
-            parsed_blocks.append(block)
+                    if line_text.strip():
+                        full_text_lines.append(line_text.strip())
 
-        # Check if page is essentially scanned (contains images but zero/minimal text)
-        is_scanned = len(parsed_blocks) == 0 and len(page.get_images()) > 0
+                text_content = "\n".join(full_text_lines)
+                if not text_content.strip():
+                    continue
 
-        page_obj = Page(
+                bbox = BBox(
+                    x0=round(b["bbox"][0], 2),
+                    y0=round(b["bbox"][1], 2),
+                    x1=round(b["bbox"][2], 2),
+                    y1=round(b["bbox"][3], 2),
+                )
+
+                avg_font_size = sum(font_sizes) / len(font_sizes) if font_sizes else 10.0
+                is_bold = any(is_bold_flags)
+
+                block = Block(
+                    block_id=f"p{page_num}_b{block_counter}",
+                    block_type=BlockType.PARAGRAPH,
+                    text=text_content,
+                    page_number=page_num,
+                    bbox=bbox,
+                    metadata={
+                        "font_size": round(avg_font_size, 2),
+                        "is_bold": is_bold,
+                    },
+                )
+                blocks.append(block)
+                block_counter += 1
+
+        is_scanned = len(blocks) == 0
+        pages.append(Page(
             page_number=page_num,
             width=width,
             height=height,
-            blocks=parsed_blocks,
-            is_scanned=is_scanned
-        )
-        pages.append(page_obj)
+            blocks=blocks,
+            is_scanned=is_scanned,
+        ))
 
     doc.close()
     return pages
+
+
+extract_pdf_pages = extract_digital_pdf
