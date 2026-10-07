@@ -48,6 +48,7 @@
                     ▼                             ▼
            [ Standard JSON Output ]     [ Rendered Markdown Export ]
 
+
 📁 Repository Structure
 Plaintext
 parseanything-engine/
@@ -70,7 +71,9 @@ parseanything-engine/
 ├── generate_pdf.py             # PDF Overview Generator Script for Pitching/Judges
 ├── pyproject.toml              # Build System & Package Distribution Config
 └── README.md                   # Project Documentation
-🚀 Quick Start
+
+
+# Quick Start
 1. Prerequisites
 Ensure you have Python 3.10+ installed. Tesseract OCR is optional but recommended for scanned PDF support.
 
