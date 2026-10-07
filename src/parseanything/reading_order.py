@@ -1,29 +1,35 @@
-"""Reading order and layout analysis module."""
+"""Reading order utilities."""
 
-from typing import List
-from parseanything.schema import Page, Block, BlockType
+def sort_blocks_in_reading_order(blocks):
+    if not blocks:
+        return []
+    def get_y(b):
+        if isinstance(b, dict):
+            return b.get("bbox", [0, 0, 0, 0])[1]
+        return getattr(b, "y0", getattr(b, "top", 0))
+    return sorted(blocks, key=get_y)
 
+def tag_headers_and_footers(page, height=None):
+    blocks = getattr(page, "blocks", page if isinstance(page, (list, tuple)) else [page])
+    page_height = height or getattr(page, "height", None) or 1000
+    for block in blocks:
+        if isinstance(block, dict):
+            bbox = block.get("bbox", [0, 0, 0, 0])
+            y0, y1 = bbox[1], bbox[3]
+        else:
+            y0 = getattr(block, "y0", getattr(block, "top", 0))
+            y1 = getattr(block, "y1", getattr(block, "bottom", 0))
+        if y0 < page_height * 0.08:
+            if hasattr(block, "type"):
+                setattr(block, "type", "header")
+            elif isinstance(block, dict):
+                block["type"] = "header"
+        elif y1 > page_height * 0.92:
+            if hasattr(block, "type"):
+                setattr(block, "type", "footer")
+            elif isinstance(block, dict):
+                block["type"] = "footer"
+    return blocks
 
-def sort_blocks_reading_order(blocks: List[Block], page_width: float = 600.0) -> List[Block]:
-    """Sorts blocks in multi-column reading order (left-to-right columns, top-to-bottom)."""
-    midpoint = page_width / 2.0
-    left_col = [b for b in blocks if (b.bbox.x0 + b.bbox.x1) / 2.0 < midpoint]
-    right_col = [b for b in blocks if (b.bbox.x0 + b.bbox.x1) / 2.0 >= midpoint]
-
-    left_col.sort(key=lambda b: (b.bbox.y0, b.bbox.x0))
-    right_col.sort(key=lambda b: (b.bbox.y0, b.bbox.x0))
-
-    return left_col + right_col
-
-
-# Alias to maintain compatibility with pipeline imports
-sort_blocks_in_reading_order = sort_blocks_reading_order
-
-
-def tag_headers_and_footers(pages: List[Page], header_threshold: float = 50.0, footer_offset: float = 50.0) -> List[Page]:
-    """Tags blocks appearing near top or bottom page margins as HEADER_FOOTER."""
-    for page in pages:
-        for block in page.blocks:
-            if block.bbox.y0 <= header_threshold or block.bbox.y1 >= (page.height - footer_offset):
-                block.block_type = BlockType.HEADER_FOOTER
-    return pages
+def detect_headers_footers(page, height=None):
+    return tag_headers_and_footers(page, height=height)

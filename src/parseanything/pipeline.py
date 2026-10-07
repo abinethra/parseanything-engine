@@ -49,7 +49,7 @@ class ParseAnythingEngine:
             table_blocks = extract_tables_from_pdf(file_path, page_num)
             all_blocks = text_blocks + table_blocks
 
-            all_blocks = detect_headers_footers(all_blocks, page_height=height)
+            all_blocks = detect_headers_footers(all_blocks, height)
             all_blocks = [b for b in all_blocks if b.block_type not in (BlockType.HEADER, BlockType.FOOTER)]
 
             all_blocks = classify_page_blocks(all_blocks)
@@ -90,3 +90,6 @@ class ParseAnythingEngine:
                     md_lines.append(f"\n{block.text}\n")
 
         return "\n".join(md_lines)
+
+    def parse(self, file_path: str, extract_tables: bool = True, ocr_fallback: bool = True):
+        return self.parse_file(file_path)
