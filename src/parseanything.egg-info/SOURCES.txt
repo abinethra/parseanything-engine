@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+src/parseanything/__init__.py
+src/parseanything/schema.py
+src/parseanything.egg-info/PKG-INFO
+src/parseanything.egg-info/SOURCES.txt
+src/parseanything.egg-info/dependency_links.txt
+src/parseanything.egg-info/top_level.txt
+tests/test_schema.py
