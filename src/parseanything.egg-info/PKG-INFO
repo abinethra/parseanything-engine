@@ -1,3 +1,51 @@
 Metadata-Version: 2.4
 Name: parseanything
-Version: 0.1.0
+Version: 1.0.0
+Summary: Modular, self-hosted document ingestion engine for finance, legal, and data science workflows.
+Author: ParseAnything Team
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: pymupdf>=1.23.0
+Requires-Dist: pytesseract>=0.3.10
+Requires-Dist: pillow>=10.0.0
+Requires-Dist: fastapi>=0.100.0
+Requires-Dist: uvicorn>=0.22.0
+Requires-Dist: python-docx>=0.8.11
+Requires-Dist: python-pptx>=0.6.21
+Requires-Dist: openpyxl>=3.1.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: extract-msg>=0.41.0
+
+\# ParseAnything Engine
+
+
+
+High-Fidelity Universal Document Ingestion Engine built for high-stakes domains (Private Equity, Investment Banking, Legal Diligence).
+
+
+
+\## Project Structure
+
+\- `src/parseanything/`: Core Python package containing parser modules
+
+\- `tests/`: Unit and integration test suite
+
+\- `samples/`: Sample multi-format files for local testing
+
+\- `outputs/`: Default folder for generated Markdown and JSON outputs
+
+
+
+\## Quick Setup
+
+```cmd
+
+python -m venv venv
+
+call venv\\Scripts\\activate
+
+pip install -r requirements.txt
+

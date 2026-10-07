@@ -6,7 +6,7 @@ from parseanything.router import parse
 
 app = FastAPI(
     title="ParseAnything Engine API",
-    description="Self-hosted, modular document ingestion engine for Legal, Finance, and Data Science applications.",
+    description="Self-hosted document ingestion engine.",
     version="1.0.0"
 )
 
@@ -33,9 +33,11 @@ async def parse_document(file: UploadFile = File(...)):
             
         return result
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
     finally:
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            shutil.rmtree(temp_dir, ignore_errors=True)
