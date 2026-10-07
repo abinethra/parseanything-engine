@@ -6,13 +6,14 @@ from parseanything.table_merger import merge_cross_page_tables
 from parseanything.equations import process_equation_blocks
 from parseanything.figures import extract_figures_from_page
 from parseanything.confidence import apply_confidence_scoring
+from parseanything.models import ParsedDocument
 import fitz
 
 def parse(file_path: str) -> Dict[str, Any]:
     """
     Unified entry point for ParseAnything engine.
-    Detects file type, routes to extractors, applies math/table merging,
-    calculates confidence scores, and returns a structured document payload.
+    Detects file type, routes to extractors, applies post-processing,
+    validates with Pydantic models, and returns structured document JSON.
     """
     if not os.path.exists(file_path):
         return {"status": "error", "code": "FILE_NOT_FOUND", "message": f"File '{file_path}' does not exist."}
@@ -57,14 +58,17 @@ def parse(file_path: str) -> Dict[str, Any]:
         # Post-Processing Pipeline
         blocks_with_math = process_equation_blocks(raw_blocks)
         merged_blocks = merge_cross_page_tables(blocks_with_math)
-        final_blocks = apply_confidence_scoring(merged_blocks)
+        scored_blocks = apply_confidence_scoring(merged_blocks)
 
-        return {
-            "status": "success",
-            "file_name": os.path.basename(file_path),
-            "total_blocks": len(final_blocks),
-            "blocks": final_blocks
-        }
+        # Validate with Pydantic
+        document_model = ParsedDocument(
+            status="success",
+            file_name=os.path.basename(file_path),
+            total_blocks=len(scored_blocks),
+            blocks=scored_blocks
+        )
+
+        return document_model.model_dump()
 
     except Exception as e:
         return {"status": "error", "code": "PARSING_FAILED", "message": str(e)}
