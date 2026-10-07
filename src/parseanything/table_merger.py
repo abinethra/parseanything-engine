@@ -1,76 +1,60 @@
-"""Cross-page table detection and merging logic."""
+from typing import Any, Dict, List
 
-from typing import List
-from parseanything.schema import Page, Block, BlockType
-from parseanything.table_parser import table_to_markdown
-
-
-def should_merge_tables(tbl1: Block, tbl2: Block) -> bool:
-    """Heuristic check to determine if two tables across consecutive pages should be merged."""
-    if tbl1.block_type != BlockType.TABLE or tbl2.block_type != BlockType.TABLE:
+def should_merge_tables(table1: Dict[str, Any], table2: Dict[str, Any]) -> bool:
+    """
+    Check if table2 on page N+1 is a continuation of table1 on page N.
+    """
+    if table2.get("page_number") != table1.get("page_number") + 1:
         return False
-
-    # Check if pages are consecutive
-    if tbl2.page_number != tbl1.page_number + 1:
+    
+    rows1 = table1.get("rows", [])
+    rows2 = table2.get("rows", [])
+    
+    if not rows1 or not rows2:
         return False
-
-    raw1 = tbl1.metadata.get("raw_table", [])
-    raw2 = tbl2.metadata.get("raw_table", [])
-
-    if not raw1 or not raw2:
-        return False
-
+    
     # Check if column counts match
-    cols1 = len(raw1[0]) if raw1 else 0
-    cols2 = len(raw2[0]) if raw2 else 0
+    col_count1 = len(rows1[0]) if rows1 else 0
+    col_count2 = len(rows2[0]) if rows2 else 0
+    
+    return col_count1 > 0 and col_count1 == col_count2
 
-    if cols1 > 0 and cols1 == cols2:
-        return True
-
-    return False
-
-
-def merge_cross_page_tables(pages: List[Page]) -> List[Page]:
-    """Iterates across pages and merges eligible cross-page tables."""
-    if len(pages) < 2:
-        return pages
-
-    for i in range(len(pages) - 1):
-        p1 = pages[i]
-        p2 = pages[i + 1]
-
-        if not p1.blocks or not p2.blocks:
-            continue
-
-        # Look for table at end of page 1 and table at start of page 2
-        p1_tables = [b for b in p1.blocks if b.block_type == BlockType.TABLE]
-        p2_tables = [b for b in p2.blocks if b.block_type == BlockType.TABLE]
-
-        if not p1_tables or not p2_tables:
-            continue
-
-        last_tbl_p1 = p1_tables[-1]
-        first_tbl_p2 = p2_tables[0]
-
-        if should_merge_tables(last_tbl_p1, first_tbl_p2):
-            raw1 = last_tbl_p1.metadata.get("raw_table", [])
-            raw2 = first_tbl_p2.metadata.get("raw_table", [])
-
-            # Merge raw cell arrays (skipping redundant header in second table if identical)
-            if raw1 and raw2 and raw1[0] == raw2[0]:
-                merged_raw = raw1 + raw2[1:]
-            else:
-                merged_raw = raw1 + raw2
-
-            merged_md = table_to_markdown(merged_raw)
-
-            # Update first table block with merged data
-            last_tbl_p1.text = merged_md
-            last_tbl_p1.metadata["raw_table"] = merged_raw
-            last_tbl_p1.metadata["num_rows"] = len(merged_raw)
-            last_tbl_p1.flags.append("merged_cross_page")
-
-            # Remove merged table block from second page
-            p2.blocks.remove(first_tbl_p2)
-
-    return pages
+def merge_cross_page_tables(blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Iterate through blocks and merge consecutive table blocks across pages.
+    """
+    merged_blocks = []
+    idx = 0
+    
+    while idx < len(blocks):
+        current = blocks[idx]
+        
+        if current.get("block_type") == "table" and idx + 1 < len(blocks):
+            nxt = blocks[idx + 1]
+            if nxt.get("block_type") == "table" and should_merge_tables(current, nxt):
+                # Combine table rows
+                combined_rows = current.get("rows", []) + nxt.get("rows", [])
+                
+                # Rebuild merged Markdown
+                markdown_lines = []
+                headers = [str(cell or "").strip() for cell in combined_rows[0]]
+                markdown_lines.append("| " + " | ".join(headers) + " |")
+                markdown_lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+                
+                for row in combined_rows[1:]:
+                    cells = [str(cell or "").strip().replace("\n", " ") for cell in row]
+                    markdown_lines.append("| " + " | ".join(cells) + " |")
+                
+                merged_table = current.copy()
+                merged_table["text"] = "\n".join(markdown_lines)
+                merged_table["rows"] = combined_rows
+                merged_table["flags"] = current.get("flags", []) + ["merged_cross_page"]
+                
+                merged_blocks.append(merged_table)
+                idx += 2  # Skip the next table as it was merged
+                continue
+        
+        merged_blocks.append(current)
+        idx += 1
+        
+    return merged_blocks
