@@ -1,4 +1,4 @@
-# ⚡ ParseAnything Engine
+# ParseAnything Engine
 
 > **Enterprise Multimodal Document Parsing & Ingestion Infrastructure**
 
@@ -11,7 +11,7 @@
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 * **Unified Schema Standardization**: Converts all supported formats into a single, structured Pydantic data model (`ParsedDocument` & `DocumentBlock`).
 * **Multimodal Support**:
@@ -24,7 +24,7 @@
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```text
                           [ Client Request / Streamlit UI ]
@@ -48,9 +48,9 @@
                     ▼                             ▼
            [ Standard JSON Output ]     [ Rendered Markdown Export ]
 
+```
+## Repository Structure
 
-📁 Repository Structure
-Plaintext
 parseanything-engine/
 ├── .streamlit/                 # Streamlit theme configuration (forced light theme)
 │   └── config.toml
@@ -69,43 +69,44 @@ parseanything-engine/
 ├── tests/                      # Automated Unit & Integration Tests (21 Tests)
 ├── app_ui.py                   # Custom Streamlit Bento Management Dashboard
 ├── generate_pdf.py             # PDF Overview Generator Script for Pitching/Judges
+├── render.yaml                 # Deployment Blueprint for Render Hosting
+├── requirements.txt            # Production Package Dependencies
 ├── pyproject.toml              # Build System & Package Distribution Config
 └── README.md                   # Project Documentation
 
-
-# Quick Start
+----
+## Quick Start
 1. Prerequisites
 Ensure you have Python 3.10+ installed. Tesseract OCR is optional but recommended for scanned PDF support.
 
-2. Installation
+2. Local Installation
 Clone the repository and set up a virtual environment:
-
-Bash
 git clone [https://github.com/YOUR_USERNAME/parseanything-engine.git](https://github.com/YOUR_USERNAME/parseanything-engine.git)
 cd parseanything-engine
 
 # Create and activate virtual environment
-python -m venv venv
+>python -m venv venv
 # On Windows:
-venv\Scripts\activate
+>venv\Scripts\activate
 # On macOS/Linux:
-source venv/bin/activate
+>source venv/bin/activate
 
 # Install dependencies in editable mode
-pip install -e .
-🖥️ Running the Application
-Option A: Start the FastAPI Backend
+>pip install -e .
+
+## Running the Application Locally
+# Option A: Start the FastAPI Backend
 Run the backend engine server using Uvicorn:
 
 Bash
-python -m uvicorn parseanything.app:app --reload
-API Service Base URL: http://127.0.0.1:8000
+>python -m uvicorn parseanything.app:app --reload
+>API Service Base URL: http://127.0.0.1:8000
 
 Interactive OpenAPI Swagger Docs: http://127.0.0.1:8000/docs
 
-Option B: Start the Streamlit Dashboard UI
+# Option B: Start the Streamlit Dashboard UI
 Launch the interactive UI dashboard:
 
 Bash
-python -m streamlit run app_ui.py
-Dashboard Access: http://localhost:8501
+> ython -m streamlit run app_ui.py
+> Dashboard Access: http://localhost:8501
